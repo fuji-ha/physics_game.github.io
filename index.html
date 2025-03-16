@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>物理シミュレーションゲーム</title>
+  <title>物理シミュレーションゲーム - ステージ上の箱</title>
   <style>
     body {
       margin: 0;
@@ -38,7 +38,7 @@
       options: {
         width: window.innerWidth,
         height: window.innerHeight,
-        wireframes: false,  // 実際の見た目で描画
+        wireframes: false,
         background: '#fafafa'
       }
     });
@@ -54,6 +54,37 @@
       render: { fillStyle: '#060a19' }
     });
     World.add(world, ground);
+
+    // ★ 固定のステージを作成 ★
+    // ステージのサイズ：幅200px、厚さ200px
+    // 位置は画面右側（x座標：ウィンドウ幅の75%）、縦位置は地面より上に配置
+    const stageWidth = 200;
+    const stageHeight = 200;
+    const stageX = window.innerWidth * 0.75;
+    // 地面から少し浮かせるため、ウィンドウ下部から250px上（中心位置）
+    const stageY = window.innerHeight - 250;
+    const stage = Bodies.rectangle(stageX, stageY, stageWidth, stageHeight, {
+      isStatic: true,
+      render: { fillStyle: '#888888' }
+    });
+    World.add(world, stage);
+
+    // ★ ステージ上に箱を５個縦に重ねる ★
+    // 各箱のサイズ：幅80px, 高さ80px
+    const boxWidth = 80;
+    const boxHeight = 80;
+    // ステージの上面の y 座標
+    const stageTop = stageY - stageHeight / 2;
+    // 下段の箱の中心 y 座標：ステージ上面に接するように配置（箱の高さの半分下げる）
+    const baseBoxY = stageTop - boxHeight / 2;
+    for (let i = 0; i < 5; i++) {
+      const boxY = baseBoxY - i * boxHeight;
+      const box = Bodies.rectangle(stageX, boxY, boxWidth, boxHeight, {
+        restitution: 0.6,
+        render: { fillStyle: '#00FF00' }
+      });
+      World.add(world, box);
+    }
 
     // ドラッグ時の状態管理用変数
     let isDragging = false;
@@ -74,9 +105,9 @@
       startPos = { x: pos.x, y: pos.y };
       currentPos = { x: pos.x, y: pos.y };
 
-      // 玉（円）の生成：半径20、初期状態は静的にしてドラッグ中に位置が固定される
+      // 玉（円）の生成：半径20、初期状態は静的（ドラッグ中は固定）
       dragBall = Bodies.circle(pos.x, pos.y, 20, {
-        restitution: 0.8,  // 反発係数（跳ね返り）
+        restitution: 0.8,
         isStatic: true,
         render: { fillStyle: '#FF0000' }
       });
@@ -98,7 +129,6 @@
       currentPos = { x: pos.x, y: pos.y };
 
       // ドラッグの開始位置と終了位置の差から発射する力を計算
-      // ※ スリングショットのように、引っ張った方向と反対に発射
       const dx = startPos.x - currentPos.x;
       const dy = startPos.y - currentPos.y;
       const forceMagnitude = 0.005; // 力の倍率（調整可能）
@@ -107,7 +137,7 @@
       Body.setStatic(dragBall, false);
       Body.applyForce(dragBall, dragBall.position, { x: dx * forceMagnitude, y: dy * forceMagnitude });
 
-      // 現在のドラッグ対象はリセット（既にワールドには残るので、複数回発射が可能）
+      // 現在のドラッグ対象をリセット（複数回発射可能）
       dragBall = null;
       startPos = null;
       currentPos = null;
